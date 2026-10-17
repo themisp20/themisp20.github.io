@@ -1,0 +1,8 @@
+<a class="skip" href="#main">skip to content</a>
+<header class="site-header">
+  {{- $cmd := "ls -lt" }}
+  {{- if .IsPage }}{{ $cmd = printf "cat %s.md" (path.Base .RelPermalink) }}
+  {{- else if eq .Kind "404" }}{{ $cmd = "cat $REQUEST_URI" }}{{ end }}
+  <a class="prompt" href="{{ "/" | relURL }}"><span class="user">{{ site.Params.prompt }}</span>$</a>
+  <span class="command">{{ $cmd }}</span><span class="cursor" aria-hidden="true"></span>
+</header>

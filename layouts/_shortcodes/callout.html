@@ -1,0 +1,6 @@
+{{- /* Usage: {{< callout warn >}}Markdown text{{< /callout >}} — types: note (default), warn, tip */ -}}
+{{- $type := .Get 0 | default "note" }}
+<aside class="callout callout-{{ $type }}">
+  <span class="callout-label">[{{ $type }}]</span>
+  {{ .Inner | .Page.RenderString (dict "display" "block") }}
+</aside>

@@ -1,0 +1,15 @@
+{{ define "main" }}
+<header class="index-header">
+  <h1 class="wordmark">writeups</h1>
+</header>
+<ul class="post-list">
+  {{- range where site.RegularPages "Section" "posts" }}
+  <li>
+    <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "02-01-2006" }}</time>
+    <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+  </li>
+  {{- else }}
+  <li class="empty">nothing published yet</li>
+  {{- end }}
+</ul>
+{{ end }}

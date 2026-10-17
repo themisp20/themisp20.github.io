@@ -1,0 +1,28 @@
+# CI overrides baseURL at build time; this value is used for local builds.
+baseURL = 'https://themisp20.github.io/'
+locale = 'en-us'
+title = 'themisp20'
+enableRobotsTXT = true
+# Single-page layout: no section listings, tags, or tag pages.
+disableKinds = ['section', 'taxonomy', 'term']
+
+[params]
+  description = 'Security research notes, write-ups and proofs of concept.'
+  author = 'themisp20'
+  github = 'https://github.com/themisp20'
+  linkedin = 'https://www.linkedin.com/in/themisp'
+  prompt = 'themisp20'
+
+[outputs]
+  home = ['html', 'rss']
+
+[markup]
+  [markup.goldmark.renderer]
+    unsafe = false
+  [markup.highlight]
+    noClasses = false
+    lineNos = false
+    tabWidth = 4
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 3
