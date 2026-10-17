@@ -49,13 +49,11 @@ However, the CWEE and CPTS were huge reasons why I felt so confident in technica
 
 ## Answering Common Questions
 
-— — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
-
-### **Q: How long to receive feedback?**
+### Q: How long to receive feedback?
 
 I received my feedback a short **2 days** after submission. I suspect this response time may not be so prompt in the future, as the certification gains traction and exam attempts/submissions rise. I believe Hack the Box officially states **1–20 days** as the official response time window.
 
-— — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+---
 
 ### Q: How did you prepare for code review?
 
@@ -65,13 +63,13 @@ Approximately **50%** of the path and exam is White-Box. Therefore it is imperat
 
 To further alleviate the intimidation of delving into larger codebases, I did a few medium/hard web CTF challenges on the HTB platform, where I once again really focused on the source as a whole.
 
-— — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+---
 
 ### Q: Where can I find HTB template for the report?
 
 PDF: <https://docs.sysreptor.com/assets/reports/HTB-CWEE-Report.pdf>
 
-- — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+---
 
 ### Q: Did you use skeleton scripts for your exploits?
 
@@ -83,7 +81,7 @@ If you follow a similar strategy, by the end of the path you will be well equipp
 
 Please don’t stress too much about having a skeleton script ready for every type of vulnerability as you have plenty of time in your exam.
 
-- — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+---
 
 ### Q: For the vulnerability fix in the report, how do they expect you to correct the vulnerability?
 
@@ -95,7 +93,7 @@ In a black-box engagement, you need to outline the vulnerability and how you fou
 
 For vulnerabilities found in a white-box engagement, you must identify the vulnerable code snippet, explain why its vulnerable, provide a concrete and safe patch for the identified code snippet, and explain why the patch fixes the vulnerability.
 
-- — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+---
 
 ### Q: What programming languages do you recommend to be proficient at for the exam?
 
@@ -105,7 +103,7 @@ Python is my go-to language for writing custom exploit scripts. I highly recomme
 
 From a code review standpoint, ensure that you are familiar with all the languages in CWEE path, as well as any frameworks. You don’t need to master these languages of course, but you should be comfortable reading them. A key strategy I implemented during the completion of the path was to keep track of language unique vulnerabilities. By doing so I developed methodologies for identifying them. For example: type juggling in PHP -\> searching for \`!=\` or \`==\` in source.
 
-- — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+---
 
 ### Q: Do they want you to write exploit scripts for ALL of the exploits or just some?
 
@@ -116,22 +114,24 @@ All scripts for vulnerabilities which warrant a custom script for successful exp
 The CWEE path is a good guide for assessing if a given vulnerability requires a custom exploit script. If a custom script was used to exploit a given vulnerability in the path, then you should write an exploit script for that same/similar vulnerability in the exam.\
 If its simpler, then just providing the payload in your report will be sufficient.
 
-- — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+---
 
 ### Q: How long did it take you to go through the path?
 
 It took around **30–40 days** to get through all the path modules which is slightly above the estimation made by Hack the Box **(27 days)**.
 
-- — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+---
 
 ### Q: How many hours per day where you actively working on your CWEE exam?
 
 Around **8–10** hours. I submitted the report on the 8th day.
 
-- — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —
+---
 
 ### Q: Did you have any prior programming experience?
 
 Yes, a lot of my coursework in university is quite programming heavy. I had ample exposure to Java and Python and a good grasp of Object Oriented Programming before starting the path.
 
-- — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — -
+---
+
+good luck ;)
