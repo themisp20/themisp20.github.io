@@ -1,6 +1,13 @@
 {{ define "main" }}
 <header class="index-header">
   <h1 class="wordmark">writeups</h1>
+  {{- with site.Params.certs }}
+  <p class="certs">
+    {{- range $i, $c := . }}{{ if $i }} · {{ end -}}
+    <a href="{{ $c.url }}" title="{{ $c.full }}" target="_blank" rel="noopener">{{ $c.name }}</a>
+    {{- end }}
+  </p>
+  {{- end }}
 </header>
 <ul class="post-list">
   {{- range where site.RegularPages "Section" "posts" }}

@@ -13,6 +13,28 @@ disableKinds = ['section', 'taxonomy', 'term']
   linkedin = 'https://www.linkedin.com/in/themisp'
   prompt = 'themisp20'
 
+  # Certifications shown on the index (display order = top to bottom).
+  [[params.certs]]
+    name = "AzRTE"
+    full = "Azure Red Team Expert"
+    url  = "https://training.hacktricks.xyz/certificates/1493c255-88bd-4e50-bf2b-03368444b006"
+  [[params.certs]]
+    name = "OSWE"
+    full = "Offensive Security Web Expert"
+    url  = "https://credentials.offsec.com/2bc825fe-c83b-4250-a7c2-23bde40fbc26#acc.V2GAe3H0"
+  [[params.certs]]
+    name = "CWEE"
+    full = "Certified Web Exploitation Expert"
+    url  = "https://www.credly.com/badges/77305372-3333-4f5f-a213-9485a2e80751/linked_in_profile"
+  [[params.certs]]
+    name = "CRTO"
+    full = "Certified Red Team Operator"
+    url  = "https://api.eu.badgr.io/public/assertions/9ytc2rYaTvy_Ihxr29tLhw"
+  [[params.certs]]
+    name = "CPTS"
+    full = "Certified Penetration Testing Specialist"
+    url  = "https://www.credly.com/badges/897230c9-94e3-45d9-8fb8-145cbdee9495/linked_in_profile"
+
 [outputs]
   home = ['html', 'rss']
 
